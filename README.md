@@ -182,3 +182,5 @@ scrape_configs:
 ------------------------------------------SETUP PROMETHEUS AND GRAFANA--------------------------
 docker-compose up -d
 
+docker restart prometheus
+

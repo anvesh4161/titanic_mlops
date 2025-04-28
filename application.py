@@ -8,9 +8,14 @@ from alibi_detect.cd import KSDrift
 from src.feature_store import RedisFeatureStore
 from sklearn. preprocessing import StandardScaler
 
+from prometheus_client import start_http_server, Counter, Gauge
+
 logger = get_logger(__name__)
 
 app = Flask(__name__, template_folder='templates')
+
+prediction_count = Counter('prediction_count', 'Number of predictions made')
+drift_count = Counter('drift_count', 'Number of drift detections')
 
 MODEL_PATH = 'artifacts/models/random_forest_model.pkl'
 with open(MODEL_PATH, 'rb') as model_file:
@@ -71,9 +76,12 @@ def predict():
         if is_drift is not None and is_drift == 1:
             print("Data Drift Detected")
             logger.info("Data Drift Detected")
+
+            drift_count.inc()
         
 
         prediction = model.predict(features)[0]
+        prediction_count.inc()
 
         result = 'Survived' if prediction == 1 else 'Did Not Survive'
         return render_template('index.html', prediction_text=f'The passenger {result}')
@@ -81,7 +89,16 @@ def predict():
     except Exception as e:
         return jsonify({'error': str(e)})
     
+@app.route('/metrics')
+def metrics():
+    from prometheus_client import generate_latest
+    from flask import Response
+
+    return Response(generate_latest(), content_type='text/plain')
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    start_http_server(8000)  # Start Prometheus metrics server on port 8000
+    app.run(debug=True, host='0.0.0.0' , port=5000)  # Start Flask app on port 5000
 
     
