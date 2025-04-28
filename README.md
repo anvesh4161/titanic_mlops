@@ -179,3 +179,6 @@ scrape_configs:
     static_configs:
       - targets: ['host.docker.internal:5000']
 
+------------------------------------------SETUP PROMETHEUS AND GRAFANA--------------------------
+docker-compose up -d
+
